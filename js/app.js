@@ -396,15 +396,6 @@ function openCheckout() {
       <label style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px">Số điện thoại / Email</label>
       <input type="text" id="co-contact" placeholder="0912345678 hoặc email@gmail.com" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:10px;font-size:14px;font-family:inherit">
     </div>
-    <div class="form-group" style="margin-bottom:6px">
-      <label style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px">Phương thức thanh toán</label>
-      <select id="co-payment" onchange="toggleBankingInfo()" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer">
-        <option value="Banking">🏦 Chuyển khoản ngân hàng (QR)</option>
-        <option value="Momo">💗 Ví Momo</option>
-        <option value="Viettel Money">📱 Viettel Money</option>
-        <option value="ZaloPay">💙 ZaloPay</option>
-      </select>
-    </div>
     <div id="bankingBox" class="banking-box"></div>
     <div style="margin-top:18px">
       <button class="btn-confirm" onclick="confirmOrder()"><i class="fas fa-check-circle"></i> Xác nhận đặt hàng - ${formatPrice(_checkoutTotal)}</button>
@@ -412,7 +403,6 @@ function openCheckout() {
 
   document.getElementById('checkoutModal').classList.add('open');
   document.body.style.overflow = 'hidden';
-  // Tự động hiển thị QR banking vì là lựa chọn mặc định
   setTimeout(toggleBankingInfo, 50);
 }
 
@@ -590,7 +580,6 @@ function handleCheckoutClick(e) {
 function confirmOrder() {
   const name = document.getElementById('co-name')?.value.trim();
   const contact = document.getElementById('co-contact')?.value.trim();
-  const payment = document.getElementById('co-payment')?.value;
   if (!name || !contact) { showToast('Vui lòng điền đầy đủ thông tin!', 'error'); return; }
 
   const data = getData();
@@ -601,9 +590,9 @@ function confirmOrder() {
     date: new Date().toISOString(),
     customer: { name, email: contact.includes('@') ? contact : '', phone: !contact.includes('@') ? contact : '' },
     items: cart.map(i => ({ productId: i.id, name: i.name, qty: i.qty, price: i.price })),
-    total, status: payment === 'Banking' ? 'pending_payment' : 'pending',
-    paymentMethod: payment,
-    transferContent: payment === 'Banking' ? transferContent : ''
+    total, status: 'pending_payment',
+    paymentMethod: 'Banking',
+    transferContent
   };
   data.orders.unshift(newOrder);
   saveData(data);
@@ -614,13 +603,7 @@ function confirmOrder() {
   closeCheckout();
   toggleCart();
   document.getElementById('checkoutContent').innerHTML = '';
-
-  if (payment === 'Banking') {
-    showPayQRModal(total, transferContent, newOrder.id);
-  } else {
-    showToast('🎉 Đặt hàng thành công! Chúng tôi sẽ liên hệ bạn sớm.', 'success');
-    setTimeout(() => showToast(`📦 Mã đơn hàng: #${newOrder.id}`, 'info'), 600);
-  }
+  showPayQRModal(total, transferContent, newOrder.id);
 }
 
 function showPayQRModal(total, content, orderId) {
