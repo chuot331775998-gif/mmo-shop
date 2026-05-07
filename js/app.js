@@ -461,17 +461,21 @@ function renderUserBtn() {
   const user = getCurrentUser();
   const btn = document.getElementById('authBtn');
   const info = document.getElementById('userInfo');
+  const bellWrap = document.getElementById('notifBellWrap');
   if (!btn) return;
   if (user) {
     btn.innerHTML = `<i class="fas fa-user-circle"></i> <span>${user.username}</span>`;
     btn.className = 'auth-btn logged';
     btn.onclick = () => document.getElementById('userDropdown').classList.toggle('show');
-    if (info) info.innerHTML = `<strong>${user.fullname || user.username}</strong>${user.email}`;
+    if (info) info.innerHTML = `<strong>${user.fullname || user.username}</strong>${user.email ? '<br>' + user.email : ''}`;
+    if (bellWrap) bellWrap.style.display = '';
+    renderNotifBell();
   } else {
     btn.innerHTML = '<i class="fas fa-user"></i> <span>Đăng nhập</span>';
     btn.className = 'auth-btn';
     btn.onclick = () => openAuth('login');
     if (info) info.innerHTML = '';
+    if (bellWrap) bellWrap.style.display = 'none';
   }
 }
 
@@ -652,3 +656,141 @@ function showToast(msg, type = 'info') {
 function formatPrice(n) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 }
+
+// ===== NOTIFICATIONS =====
+function getUserNotifications() {
+  const user = getCurrentUser();
+  if (!user) return [];
+  const data = getData();
+  const notifs = data.notifications || [];
+  return notifs.filter(n => n.userId === null || n.userId === undefined || n.userId == user.id);
+}
+
+function renderNotifBell() {
+  const user = getCurrentUser();
+  const badge = document.getElementById('notifCountBadge');
+  const listEl = document.getElementById('notifList');
+  if (!badge || !listEl) return;
+
+  const notifs = getUserNotifications();
+  const unread = notifs.filter(n => !n.read);
+
+  if (unread.length > 0) {
+    badge.style.display = '';
+    badge.textContent = unread.length > 9 ? '9+' : unread.length;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if (notifs.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px"><i class="fas fa-bell-slash" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>Không có thông báo nào</div>';
+    return;
+  }
+
+  const typeIcon = { info: 'fa-info-circle', success: 'fa-check-circle', warning: 'fa-exclamation-triangle', promo: 'fa-gift', error: 'fa-times-circle' };
+  const typeColor = { info: '#06b6d4', success: '#10b981', warning: '#f59e0b', promo: '#7c3aed', error: '#ef4444' };
+
+  listEl.innerHTML = [...notifs].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0)).map(n => `
+    <div class="notif-item ${n.read ? 'read' : 'unread'}" onclick="markNotifRead(${n.id})">
+      <div class="notif-item-icon" style="color:${typeColor[n.type] || typeColor.info}">
+        <i class="fas ${typeIcon[n.type] || typeIcon.info}"></i>
+      </div>
+      <div class="notif-item-body">
+        <div class="notif-item-title">${n.title}</div>
+        <div class="notif-item-msg">${n.message}</div>
+        <div class="notif-item-time">${n.createdAt ? new Date(n.createdAt).toLocaleString('vi-VN') : ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleNotifDropdown() {
+  const dropdown = document.getElementById('notifDropdown');
+  if (!dropdown) return;
+  const isOpen = dropdown.classList.contains('show');
+  // Close other dropdowns
+  document.getElementById('userDropdown')?.classList.remove('show');
+  dropdown.classList.toggle('show', !isOpen);
+}
+
+function markNotifRead(id) {
+  const user = getCurrentUser();
+  if (!user) return;
+  const data = getData();
+  const notif = (data.notifications || []).find(n => n.id === id);
+  if (notif && !notif.read) {
+    notif.read = true;
+    saveData(data);
+    renderNotifBell();
+  }
+}
+
+function markAllNotifRead() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const data = getData();
+  const notifs = data.notifications || [];
+  notifs.forEach(n => {
+    if (n.userId === null || n.userId === undefined || n.userId == user.id) n.read = true;
+  });
+  saveData(data);
+  renderNotifBell();
+}
+
+// ===== PURCHASE HISTORY =====
+function openPurchaseHistory() {
+  document.getElementById('userDropdown')?.classList.remove('show');
+  const user = getCurrentUser();
+  if (!user) return;
+  const data = getData();
+  const orders = data.orders.filter(o => o.customer.email === user.email || o.customer.phone === user.phone);
+  const historyContent = document.getElementById('historyContent');
+  const modal = document.getElementById('historyModal');
+  if (!historyContent || !modal) return;
+
+  if (orders.length === 0) {
+    historyContent.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8"><i class="fas fa-shopping-bag" style="font-size:40px;display:block;margin-bottom:12px;opacity:.3"></i><p>Bạn chưa có đơn hàng nào</p></div>';
+  } else {
+    const sorted = [...orders].sort((a,b) => new Date(b.date) - new Date(a.date));
+    const statusMap = { pending: ['#f59e0b','Chờ xử lý'], processing: ['#7c3aed','Đang xử lý'], completed: ['#10b981','Hoàn thành'], cancelled: ['#ef4444','Đã hủy'] };
+    historyContent.innerHTML = `
+      <div style="margin-bottom:12px;font-size:13px;color:#64748b">${orders.length} đơn hàng · Số dư hiện tại: <strong style="color:#7c3aed">${formatPrice(user.balance || 0)}</strong></div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${sorted.map(o => {
+          const [color, label] = statusMap[o.status] || ['#94a3b8', o.status];
+          return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-weight:700;font-size:13px">#ĐH${o.id}</span>
+              <span style="background:${color}20;color:${color};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">${label}</span>
+            </div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:6px">${o.date ? new Date(o.date).toLocaleString('vi-VN') : ''}</div>
+            <div style="font-size:13px;margin-bottom:6px">${o.items.map(i => `${i.name} <span style="color:#94a3b8">x${i.qty}</span>`).join(' · ')}</div>
+            <div style="font-weight:800;color:#e94560;font-size:15px">${formatPrice(o.total)}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeHistoryModal() {
+  const modal = document.getElementById('historyModal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  const bellWrap = document.getElementById('notifBellWrap');
+  const notifDropdown = document.getElementById('notifDropdown');
+  const userBtnWrap = document.getElementById('userBtnWrap');
+  const userDropdown = document.getElementById('userDropdown');
+
+  if (bellWrap && notifDropdown && !bellWrap.contains(e.target)) {
+    notifDropdown.classList.remove('show');
+  }
+  if (userBtnWrap && userDropdown && !userBtnWrap.contains(e.target)) {
+    userDropdown.classList.remove('show');
+  }
+});
+

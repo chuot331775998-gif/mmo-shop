@@ -17,9 +17,11 @@ const INITIAL_DATA = {
     nextProductId: 164,
     nextOrderId: 11,
     nextCategoryId: 9,
-    nextUserId: 1
+    nextUserId: 1,
+    nextNotificationId: 1
   },
   users: [],
+  notifications: [],
   categories: [
     { id: 1, name: "Tài khoản Game", icon: "fas fa-gamepad", color: "#e94560", slug: "tai-khoan", active: true, description: "Tài khoản game các loại đã nâng cấp sẵn" },
     { id: 2, name: "Tiền tệ Game", icon: "fas fa-coins", color: "#f5a623", slug: "tien-te", active: true, description: "Kim cương, vàng, UC, V-bucks và tiền tệ in-game" },
@@ -247,6 +249,18 @@ function initData() {
       const existing = JSON.parse(raw);
       if (!existing.settings || existing.settings.nextProductId < 164) {
         localStorage.setItem('mmo_data_v2', JSON.stringify(INITIAL_DATA));
+      } else {
+        // Patch dữ liệu cũ thiếu field mới
+        let changed = false;
+        if (!existing.notifications) { existing.notifications = []; changed = true; }
+        if (!existing.settings.nextNotificationId) { existing.settings.nextNotificationId = 1; changed = true; }
+        if (existing.users) {
+          existing.users.forEach(u => {
+            if (u.balance === undefined) { u.balance = 0; changed = true; }
+            if (!u.orderHistory) { u.orderHistory = []; changed = true; }
+          });
+        }
+        if (changed) localStorage.setItem('mmo_data_v2', JSON.stringify(existing));
       }
     } catch(e) {
       localStorage.setItem('mmo_data_v2', JSON.stringify(INITIAL_DATA));

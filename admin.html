@@ -65,8 +65,13 @@
       <a href="#" onclick="showPage('orders')" id="nav-orders">
         <i class="fas fa-shopping-bag"></i> Đơn hàng
         <span class="nav-badge" id="navOrderCount">0</span>
+      </a>      <a href="#" onclick="showPage('users')" id="nav-users">
+        <i class="fas fa-users"></i> Người dùng
+        <span class="nav-badge" id="navUserCount">0</span>
       </a>
-      <div class="nav-section">Hệ thống</div>
+      <a href="#" onclick="showPage('notifications')" id="nav-notifications">
+        <i class="fas fa-bell"></i> Thông báo
+      </a>      <div class="nav-section">Hệ thống</div>
       <a href="#" onclick="showPage('settings')" id="nav-settings">
         <i class="fas fa-cog"></i> Cài đặt
       </a>
@@ -186,6 +191,84 @@
               </tr></thead>
               <tbody id="ordersTableBody"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== USERS ===== -->
+      <div id="page-users" style="display:none">
+        <div class="admin-table-wrap">
+          <div class="table-header">
+            <h2><i class="fas fa-users" style="color:var(--primary);margin-right:8px"></i>Quản lý người dùng (<span id="userCount">0</span>)</h2>
+            <div class="table-actions">
+              <input type="text" class="table-search" id="userSearch" placeholder="Tìm theo tên, email, SĐT..." oninput="renderUsersTable()">
+              <select class="table-filter" id="userSortFilter" onchange="renderUsersTable()">
+                <option value="new">Mới nhất</option>
+                <option value="old">Cũ nhất</option>
+                <option value="balance">Số dư cao</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th>#</th><th>Người dùng</th><th>Email</th><th>Số điện thoại</th>
+                <th>Số dư</th><th>Đơn hàng</th><th>Ngày đăng ký</th><th>Thao tác</th>
+              </tr></thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+          <div class="table-pagination">
+            <span id="userPaginationInfo">Hiển thị 0 người dùng</span>
+            <div class="pagination-btns" id="userPaginationBtns"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== NOTIFICATIONS ===== -->
+      <div id="page-notifications" style="display:none">
+        <div class="notif-page-wrap">
+          <!-- Compose Panel -->
+          <div class="notif-compose-card">
+            <div class="notif-compose-header">
+              <h2><i class="fas fa-paper-plane" style="color:var(--primary)"></i> Gửi thông báo</h2>
+            </div>
+            <div class="notif-compose-body">
+              <div class="form-group">
+                <label>Người nhận</label>
+                <select id="notif-recipient" class="form-group" style="width:100%;background:var(--bg3);border:1.5px solid var(--border);padding:10px 13px;border-radius:8px;font-size:13px;color:var(--text)">
+                  <option value="all">📢 Gửi tất cả người dùng</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Loại thông báo</label>
+                <select id="notif-type" style="width:100%;background:var(--bg3);border:1.5px solid var(--border);padding:10px 13px;border-radius:8px;font-size:13px;color:var(--text)">
+                  <option value="info">ℹ️ Thông tin</option>
+                  <option value="success">✅ Thành công</option>
+                  <option value="warning">⚠️ Cảnh báo</option>
+                  <option value="promo">🎁 Khuyến mãi</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tiêu đề *</label>
+                <input type="text" id="notif-title" placeholder="Tiêu đề thông báo..." style="width:100%;background:var(--bg3);border:1.5px solid var(--border);padding:10px 13px;border-radius:8px;font-size:13px;color:var(--text)">
+              </div>
+              <div class="form-group">
+                <label>Nội dung *</label>
+                <textarea id="notif-message" rows="4" placeholder="Nội dung thông báo..." style="width:100%;background:var(--bg3);border:1.5px solid var(--border);padding:10px 13px;border-radius:8px;font-size:13px;color:var(--text);resize:vertical"></textarea>
+              </div>
+              <button class="btn-save" style="width:100%;justify-content:center" onclick="sendNotification()">
+                <i class="fas fa-paper-plane"></i> Gửi thông báo
+              </button>
+            </div>
+          </div>
+          <!-- Notification History -->
+          <div class="admin-table-wrap">
+            <div class="table-header">
+              <h2><i class="fas fa-history" style="color:var(--primary);margin-right:8px"></i>Lịch sử thông báo</h2>
+              <button class="btn-delete" style="padding:7px 14px;font-size:12px" onclick="clearAllNotifications()"><i class="fas fa-trash"></i> Xóa tất cả</button>
+            </div>
+            <div id="notifHistoryList"></div>
           </div>
         </div>
       </div>
@@ -373,6 +456,81 @@
 </div>
 
 <div class="admin-toast-container" id="adminToastContainer"></div>
+
+<!-- USER DETAIL MODAL -->
+<div class="modal-bg" id="userDetailModalBg">
+  <div class="modal-form" style="max-width:560px">
+    <div class="modal-form-header">
+      <h2><i class="fas fa-user-circle" style="color:var(--primary);margin-right:6px"></i>Chi tiết người dùng</h2>
+      <button onclick="closeUserDetailModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-form-body" id="userDetailBody"></div>
+    <div class="modal-form-footer">
+      <button class="btn-cancel" onclick="closeUserDetailModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD BALANCE MODAL -->
+<div class="modal-bg" id="addBalanceModalBg">
+  <div class="modal-form" style="max-width:420px">
+    <div class="modal-form-header">
+      <h2><i class="fas fa-wallet" style="color:var(--green);margin-right:6px"></i>Cộng tiền tài khoản</h2>
+      <button onclick="closeAddBalanceModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-form-body">
+      <input type="hidden" id="balance-userId">
+      <div id="balance-userInfo" style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;color:var(--text2)"></div>
+      <div class="form-group">
+        <label>Số tiền cộng thêm (VNĐ) *</label>
+        <input type="number" id="balance-amount" placeholder="Ví dụ: 100000" min="1">
+      </div>
+      <div class="form-group">
+        <label>Ghi chú (tùy chọn)</label>
+        <input type="text" id="balance-note" placeholder="Lý do cộng tiền...">
+      </div>
+    </div>
+    <div class="modal-form-footer">
+      <button class="btn-cancel" onclick="closeAddBalanceModal()">Hủy</button>
+      <button class="btn-green" onclick="saveAddBalance()"><i class="fas fa-plus"></i> Cộng tiền</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEND NOTIF TO USER MODAL -->
+<div class="modal-bg" id="sendNotifUserModalBg">
+  <div class="modal-form" style="max-width:460px">
+    <div class="modal-form-header">
+      <h2><i class="fas fa-bell" style="color:var(--primary);margin-right:6px"></i>Gửi thông báo đến người dùng</h2>
+      <button onclick="closeSendNotifUserModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-form-body">
+      <input type="hidden" id="snu-userId">
+      <div id="snu-userInfo" style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;color:var(--text2)"></div>
+      <div class="form-group">
+        <label>Loại thông báo</label>
+        <select id="snu-type" style="width:100%;background:var(--bg3);border:1.5px solid var(--border);padding:10px 13px;border-radius:8px;font-size:13px;color:var(--text)">
+          <option value="info">ℹ️ Thông tin</option>
+          <option value="success">✅ Thành công</option>
+          <option value="warning">⚠️ Cảnh báo</option>
+          <option value="promo">🎁 Khuyến mãi</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tiêu đề *</label>
+        <input type="text" id="snu-title" placeholder="Tiêu đề thông báo...">
+      </div>
+      <div class="form-group">
+        <label>Nội dung *</label>
+        <textarea id="snu-message" rows="3" placeholder="Nội dung thông báo..."></textarea>
+      </div>
+    </div>
+    <div class="modal-form-footer">
+      <button class="btn-cancel" onclick="closeSendNotifUserModal()">Hủy</button>
+      <button class="btn-save" onclick="saveSendNotifUser()"><i class="fas fa-paper-plane"></i> Gửi</button>
+    </div>
+  </div>
+</div>
 
 <script src="js/data.js"></script>
 <script src="js/admin.js"></script>

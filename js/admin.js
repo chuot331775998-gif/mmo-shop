@@ -53,15 +53,17 @@ function updateNavBadges() {
   const data = getData();
   const nb = document.getElementById('navProdCount');
   const ob = document.getElementById('navOrderCount');
+  const ub = document.getElementById('navUserCount');
   if (nb) nb.textContent = data.products.filter(p => p.active).length;
   if (ob) ob.textContent = data.orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+  if (ub) ub.textContent = (data.users || []).length;
 }
 
 // ===== PAGE NAVIGATION =====
 function showPage(page) {
   currentPage = page;
   // Hide all pages
-  ['dashboard', 'products', 'categories', 'orders', 'settings'].forEach(p => {
+  ['dashboard', 'products', 'categories', 'orders', 'users', 'notifications', 'settings'].forEach(p => {
     const el = document.getElementById('page-' + p);
     if (el) el.style.display = 'none';
   });
@@ -73,7 +75,7 @@ function showPage(page) {
   const navEl = document.getElementById('nav-' + page);
   if (navEl) navEl.classList.add('active');
   // Update title
-  const titles = { dashboard: 'Dashboard', products: 'Quản lý sản phẩm', categories: 'Quản lý danh mục', orders: 'Quản lý đơn hàng', settings: 'Cài đặt' };
+  const titles = { dashboard: 'Dashboard', products: 'Quản lý sản phẩm', categories: 'Quản lý danh mục', orders: 'Quản lý đơn hàng', users: 'Quản lý người dùng', notifications: 'Thông báo', settings: 'Cài đặt' };
   document.getElementById('pageTitle').textContent = titles[page] || 'Admin';
 
   // Render page content
@@ -81,6 +83,8 @@ function showPage(page) {
   else if (page === 'products') renderProductsTable();
   else if (page === 'categories') renderCategories();
   else if (page === 'orders') renderOrdersTable();
+  else if (page === 'users') renderUsersTable();
+  else if (page === 'notifications') renderNotificationsPage();
   else if (page === 'settings') loadSettings();
 }
 
@@ -103,7 +107,7 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-icon" style="background:rgba(6,182,212,.15);color:#06b6d4"><i class="fas fa-box-open"></i></div>
       <div class="stat-info"><h3>${totalProducts}</h3><p>Sản phẩm đang bán</p><div class="stat-change up"><i class="fas fa-arrow-up"></i> ${products.length} tổng cộng</div></div></div>
     <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,.15);color:#f59e0b"><i class="fas fa-users"></i></div>
-      <div class="stat-info"><h3>${[...new Set(orders.map(o => o.customer.email || o.customer.phone))].length}</h3><p>Khách hàng</p><div class="stat-change up"><i class="fas fa-arrow-up"></i> +5% tháng này</div></div></div>`;
+      <div class="stat-info"><h3>${(data.users || []).length}</h3><p>Tài khoản đăng ký</p><div class="stat-change up"><i class="fas fa-arrow-up"></i> ${[...new Set(orders.map(o => o.customer.email || o.customer.phone))].length} khách mua hàng</div></div></div>`;
 
   // Chart
   const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
@@ -577,3 +581,318 @@ function adminToast(msg, type = 'info') {
   container.appendChild(div);
   setTimeout(() => div.remove(), 3500);
 }
+
+// ===== USERS =====
+let userPageNum = 1;
+const USER_PER_PAGE = 15;
+
+function renderUsersTable() {
+  const data = getData();
+  const users = data.users || [];
+  const search = (document.getElementById('userSearch')?.value || '').toLowerCase();
+  const sort = document.getElementById('userSortFilter')?.value || 'new';
+
+  let filtered = users.slice();
+  if (search) filtered = filtered.filter(u =>
+    (u.fullname || '').toLowerCase().includes(search) ||
+    (u.username || '').toLowerCase().includes(search) ||
+    (u.email || '').toLowerCase().includes(search) ||
+    (u.phone || '').toLowerCase().includes(search)
+  );
+  if (sort === 'new') filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  else if (sort === 'old') filtered.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+  else if (sort === 'balance') filtered.sort((a, b) => (b.balance || 0) - (a.balance || 0));
+
+  document.getElementById('userCount').textContent = filtered.length;
+
+  const total = filtered.length;
+  const start = (userPageNum - 1) * USER_PER_PAGE;
+  const slice = filtered.slice(start, start + USER_PER_PAGE);
+
+  if (slice.length === 0) {
+    document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)"><i class="fas fa-users" style="font-size:32px;display:block;margin-bottom:10px;opacity:.3"></i>Chưa có người dùng đăng ký nào</td></tr>`;
+    document.getElementById('userPaginationInfo').textContent = 'Không có người dùng';
+    document.getElementById('userPaginationBtns').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('usersTableBody').innerHTML = slice.map(u => {
+    const initials = (u.fullname || u.username || '?').slice(0,1).toUpperCase();
+    const userOrders = data.orders.filter(o => o.customer.email === u.email || o.customer.phone === u.phone);
+    return `<tr>
+      <td style="color:var(--muted);font-size:12px">#${u.id}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="user-avatar">${initials}</div>
+          <div>
+            <div style="font-weight:700;font-size:13px">${u.fullname || u.username}</div>
+            <div style="font-size:11px;color:var(--muted)">@${u.username}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:13px">${u.email || '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="font-size:13px">${u.phone || '<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="balance-chip"><i class="fas fa-wallet" style="font-size:10px"></i>${fmtMoney(u.balance || 0)}</span></td>
+      <td style="font-weight:600">${userOrders.length}</td>
+      <td style="font-size:12px;color:var(--muted)">${u.createdAt ? fmtDate(u.createdAt) : '—'}</td>
+      <td><div class="td-actions">
+        <button class="btn-view" onclick="openUserDetailModal(${u.id})"><i class="fas fa-eye"></i> Chi tiết</button>
+        <button class="btn-balance" onclick="openAddBalanceModal(${u.id})"><i class="fas fa-plus"></i> Cộng tiền</button>
+        <button class="btn-notif" onclick="openSendNotifUserModal(${u.id})"><i class="fas fa-bell"></i></button>
+        <button class="btn-delete" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('userPaginationInfo').textContent = `Hiển thị ${start + 1}-${Math.min(start + USER_PER_PAGE, total)} / ${total} người dùng`;
+  const pBtns = document.getElementById('userPaginationBtns');
+  pBtns.innerHTML = '';
+  const totalPages = Math.ceil(total / USER_PER_PAGE);
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    if (i === userPageNum) btn.classList.add('active');
+    btn.onclick = () => { userPageNum = i; renderUsersTable(); };
+    pBtns.appendChild(btn);
+  }
+}
+
+function deleteUser(id) {
+  if (!confirm('Bạn có chắc muốn xóa tài khoản người dùng này không?')) return;
+  const data = getData();
+  data.users = (data.users || []).filter(u => u.id !== id);
+  saveData(data);
+  renderUsersTable();
+  updateNavBadges();
+  adminToast('Đã xóa tài khoản người dùng!', 'info');
+}
+
+function openUserDetailModal(userId) {
+  const data = getData();
+  const u = (data.users || []).find(x => x.id === userId);
+  if (!u) return;
+  const userOrders = data.orders.filter(o => o.customer.email === u.email || o.customer.phone === u.phone);
+  const totalSpent = userOrders.filter(o => o.status === 'completed').reduce((s, o) => s + o.total, 0);
+  const initials = (u.fullname || u.username || '?').slice(0,1).toUpperCase();
+
+  document.getElementById('userDetailBody').innerHTML = `
+    <div class="user-detail-panel">
+      <div class="ud-avatar">${initials}</div>
+      <div class="ud-info">
+        <h3>${u.fullname || u.username}</h3>
+        <p>@${u.username} • Đăng ký: ${u.createdAt ? fmtDate(u.createdAt) : '—'}</p>
+      </div>
+      <div class="ud-stats">
+        <div class="ud-stat"><div class="v">${fmtMoney(u.balance || 0)}</div><div class="l">Số dư</div></div>
+        <div class="ud-stat"><div class="v">${userOrders.length}</div><div class="l">Đơn hàng</div></div>
+        <div class="ud-stat"><div class="v">${fmtMoney(totalSpent)}</div><div class="l">Đã chi tiêu</div></div>
+        <div class="ud-stat"><div class="v">${userOrders.filter(o => o.status === 'completed').length}</div><div class="l">Hoàn thành</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px">Thông tin liên hệ</div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;display:grid;gap:6px">
+        <div><span style="color:var(--muted);width:90px;display:inline-block">Email:</span> ${u.email || '—'}</div>
+        <div><span style="color:var(--muted);width:90px;display:inline-block">Điện thoại:</span> ${u.phone || '—'}</div>
+        <div><span style="color:var(--muted);width:90px;display:inline-block">Tên hiển thị:</span> ${u.fullname || '—'}</div>
+      </div>
+    </div>
+    ${userOrders.length > 0 ? `
+    <div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px">Lịch sử mua hàng</div>
+      <table class="history-table-mini">
+        <thead><tr><th>Mã ĐH</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Ngày</th><th>Trạng thái</th></tr></thead>
+        <tbody>${userOrders.slice().sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,10).map(o => `<tr>
+          <td><strong>#${o.id}</strong></td>
+          <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.items.map(i=>i.name).join(', ')}</td>
+          <td style="font-weight:700;color:#e94560">${fmtMoney(o.total)}</td>
+          <td>${o.date ? o.date.split('T')[0] : '—'}</td>
+          <td>${statusBadge(o.status)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>` : '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Chưa có đơn hàng nào</div>'}
+  `;
+  document.getElementById('userDetailModalBg').classList.add('open');
+}
+
+function closeUserDetailModal() { document.getElementById('userDetailModalBg').classList.remove('open'); }
+
+function openAddBalanceModal(userId) {
+  const data = getData();
+  const u = (data.users || []).find(x => x.id === userId);
+  if (!u) return;
+  document.getElementById('balance-userId').value = userId;
+  document.getElementById('balance-amount').value = '';
+  document.getElementById('balance-note').value = '';
+  document.getElementById('balance-userInfo').innerHTML = `
+    <i class="fas fa-user-circle" style="color:var(--primary);margin-right:6px"></i>
+    <strong>${u.fullname || u.username}</strong> — Số dư hiện tại: <strong style="color:#16a34a">${fmtMoney(u.balance || 0)}</strong>
+  `;
+  document.getElementById('addBalanceModalBg').classList.add('open');
+}
+
+function closeAddBalanceModal() { document.getElementById('addBalanceModalBg').classList.remove('open'); }
+
+function saveAddBalance() {
+  const userId = parseInt(document.getElementById('balance-userId').value);
+  const amount = parseFloat(document.getElementById('balance-amount').value);
+  if (!amount || amount <= 0) { adminToast('Vui lòng nhập số tiền hợp lệ!', 'error'); return; }
+  const data = getData();
+  const u = (data.users || []).find(x => x.id === userId);
+  if (!u) { adminToast('Không tìm thấy người dùng!', 'error'); return; }
+  u.balance = (u.balance || 0) + amount;
+
+  // Tạo thông báo tự động
+  if (!data.notifications) data.notifications = [];
+  if (!data.settings.nextNotificationId) data.settings.nextNotificationId = 1;
+  const note = document.getElementById('balance-note').value.trim();
+  data.notifications.push({
+    id: data.settings.nextNotificationId++,
+    userId: userId,
+    title: '💰 Tài khoản được cộng tiền',
+    message: `Số dư của bạn được cộng thêm ${fmtMoney(amount)}.${note ? ' Lý do: ' + note : ''} Số dư hiện tại: ${fmtMoney(u.balance)}.`,
+    type: 'success',
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+
+  saveData(data);
+  closeAddBalanceModal();
+  renderUsersTable();
+  adminToast(`Đã cộng ${fmtMoney(amount)} cho ${u.fullname || u.username}!`, 'success');
+}
+
+function openSendNotifUserModal(userId) {
+  const data = getData();
+  const u = (data.users || []).find(x => x.id === userId);
+  if (!u) return;
+  document.getElementById('snu-userId').value = userId;
+  document.getElementById('snu-title').value = '';
+  document.getElementById('snu-message').value = '';
+  document.getElementById('snu-type').value = 'info';
+  document.getElementById('snu-userInfo').innerHTML = `
+    <i class="fas fa-user-circle" style="color:var(--primary);margin-right:6px"></i>
+    Gửi đến: <strong>${u.fullname || u.username}</strong> (${u.email || u.phone || '—'})
+  `;
+  document.getElementById('sendNotifUserModalBg').classList.add('open');
+}
+
+function closeSendNotifUserModal() { document.getElementById('sendNotifUserModalBg').classList.remove('open'); }
+
+function saveSendNotifUser() {
+  const userId = parseInt(document.getElementById('snu-userId').value);
+  const title = document.getElementById('snu-title').value.trim();
+  const message = document.getElementById('snu-message').value.trim();
+  const type = document.getElementById('snu-type').value;
+  if (!title || !message) { adminToast('Vui lòng điền tiêu đề và nội dung!', 'error'); return; }
+  const data = getData();
+  if (!data.notifications) data.notifications = [];
+  if (!data.settings.nextNotificationId) data.settings.nextNotificationId = 1;
+  data.notifications.push({
+    id: data.settings.nextNotificationId++,
+    userId,
+    title,
+    message,
+    type,
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+  saveData(data);
+  closeSendNotifUserModal();
+  adminToast('Đã gửi thông báo!', 'success');
+}
+
+// ===== NOTIFICATIONS PAGE =====
+function renderNotificationsPage() {
+  const data = getData();
+  const users = data.users || [];
+
+  // Populate recipient dropdown
+  const sel = document.getElementById('notif-recipient');
+  if (sel) {
+    sel.innerHTML = '<option value="all">📢 Gửi tất cả người dùng</option>' +
+      users.map(u => `<option value="${u.id}">${u.fullname || u.username} (${u.email || u.phone || '—'})</option>`).join('');
+  }
+
+  // Render notification history
+  const notifs = [...(data.notifications || [])].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  const listEl = document.getElementById('notifHistoryList');
+  if (!listEl) return;
+
+  if (notifs.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)"><i class="fas fa-bell-slash" style="font-size:32px;display:block;margin-bottom:10px;opacity:.3"></i>Chưa có thông báo nào được gửi</div>';
+    return;
+  }
+
+  const typeConfig = {
+    info: { icon: 'fa-info-circle', cls: 'notif-type-broadcast' },
+    success: { icon: 'fa-check-circle', cls: 'notif-type-success' },
+    warning: { icon: 'fa-exclamation-triangle', cls: 'notif-type-warning' },
+    promo: { icon: 'fa-gift', cls: 'notif-type-broadcast' },
+    error: { icon: 'fa-times-circle', cls: 'notif-type-error' }
+  };
+
+  listEl.innerHTML = notifs.map(n => {
+    const cfg = typeConfig[n.type] || typeConfig.info;
+    const recipient = n.userId === null || n.userId === 'all'
+      ? '📢 Tất cả người dùng'
+      : (() => { const u = users.find(x => x.id === n.userId); return u ? (u.fullname || u.username) : `User #${n.userId}`; })();
+    const dateStr = n.createdAt ? new Date(n.createdAt).toLocaleString('vi-VN') : '—';
+    return `<div class="notif-list-item">
+      <div class="notif-icon ${cfg.cls}"><i class="fas ${cfg.icon}"></i></div>
+      <div class="notif-info">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-msg">${n.message}</div>
+        <div class="notif-meta"><i class="fas fa-user" style="margin-right:4px"></i>${recipient} · <i class="fas fa-clock" style="margin-left:4px;margin-right:4px"></i>${dateStr}</div>
+      </div>
+      <button class="btn-delete" style="padding:4px 8px;font-size:11px;flex-shrink:0;align-self:flex-start" onclick="deleteNotif(${n.id})"><i class="fas fa-times"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function sendNotification() {
+  const recipient = document.getElementById('notif-recipient')?.value;
+  const title = document.getElementById('notif-title')?.value.trim();
+  const message = document.getElementById('notif-message')?.value.trim();
+  const type = document.getElementById('notif-type')?.value || 'info';
+  if (!title || !message) { adminToast('Vui lòng điền tiêu đề và nội dung!', 'error'); return; }
+
+  const data = getData();
+  if (!data.notifications) data.notifications = [];
+  if (!data.settings.nextNotificationId) data.settings.nextNotificationId = 1;
+
+  const userId = (recipient === 'all') ? null : parseInt(recipient);
+  data.notifications.push({
+    id: data.settings.nextNotificationId++,
+    userId,
+    title,
+    message,
+    type,
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+
+  saveData(data);
+  document.getElementById('notif-title').value = '';
+  document.getElementById('notif-message').value = '';
+  renderNotificationsPage();
+  const recipientLabel = (recipient === 'all') ? 'tất cả người dùng' : 'người dùng đã chọn';
+  adminToast(`Đã gửi thông báo đến ${recipientLabel}!`, 'success');
+}
+
+function deleteNotif(id) {
+  const data = getData();
+  data.notifications = (data.notifications || []).filter(n => n.id !== id);
+  saveData(data);
+  renderNotificationsPage();
+}
+
+function clearAllNotifications() {
+  if (!confirm('Xóa tất cả thông báo?')) return;
+  const data = getData();
+  data.notifications = [];
+  saveData(data);
+  renderNotificationsPage();
+  adminToast('Đã xóa tất cả thông báo!', 'info');
+}
+
