@@ -353,30 +353,25 @@ function buildVietQR(amount, content) {
   return `https://img.vietqr.io/image/${BANK_INFO.bank}-${BANK_INFO.account}-compact2.png?amount=${amount}&addInfo=${enc(content)}&accountName=${enc(BANK_INFO.name)}`;
 }
 
-function toggleBankingInfo() {
-  const sel = document.getElementById('co-payment');
+function showBankingInfo() {
   const box = document.getElementById('bankingBox');
-  if (!box || !sel) return;
-  if (sel.value === 'Banking') {
-    const orderId = 'MMOSHOP' + Date.now().toString().slice(-6);
-    const qrUrl = buildVietQR(_checkoutTotal, orderId);
-    box.innerHTML = `
-      <div class="bk-title"><i class="fas fa-university"></i> Thông tin chuyển khoản</div>
-      <div class="banking-qr-wrap">
-        <img src="${qrUrl}" alt="QR VietQR" onerror="this.src='https://placehold.co/140x140/1e1e35/7c3aed?text=QR'">
-        <div class="banking-detail">
-          <div class="bd-row"><span class="bd-label">Ngân hàng</span><span class="bd-val">VIB Bank</span></div>
-          <div class="bd-row"><span class="bd-label">Số tài khoản</span><span class="bd-val green">${BANK_INFO.account}</span></div>
-          <div class="bd-row"><span class="bd-label">Chủ tài khoản</span><span class="bd-val">${BANK_INFO.displayName}</span></div>
-          <div class="bd-row"><span class="bd-label">Số tiền</span><span class="bd-val accent">${formatPrice(_checkoutTotal)}</span></div>
-          <div class="bd-row"><span class="bd-label">Nội dung CK</span><span class="bd-val" style="color:var(--gold)">${orderId}</span></div>
-        </div>
+  if (!box) return;
+  const orderId = 'MMOSHOP' + Date.now().toString().slice(-6);
+  const qrUrl = buildVietQR(_checkoutTotal, orderId);
+  box.innerHTML = `
+    <div class="bk-title"><i class="fas fa-university"></i> Thông tin chuyển khoản</div>
+    <div class="banking-qr-wrap">
+      <img src="${qrUrl}" alt="QR VietQR" onerror="this.src='https://placehold.co/140x140/1e1e35/7c3aed?text=QR'">
+      <div class="banking-detail">
+        <div class="bd-row"><span class="bd-label">Ngân hàng</span><span class="bd-val">VIB Bank</span></div>
+        <div class="bd-row"><span class="bd-label">Số tài khoản</span><span class="bd-val green">${BANK_INFO.account}</span></div>
+        <div class="bd-row"><span class="bd-label">Chủ tài khoản</span><span class="bd-val">${BANK_INFO.displayName}</span></div>
+        <div class="bd-row"><span class="bd-label">Số tiền</span><span class="bd-val accent">${formatPrice(_checkoutTotal)}</span></div>
+        <div class="bd-row"><span class="bd-label">Nội dung CK</span><span class="bd-val" style="color:var(--gold)">${orderId}</span></div>
       </div>
-      <div class="banking-note"><i class="fas fa-info-circle"></i> Quét QR bằng app ngân hàng bất kỳ. Số tiền & nội dung đã được điền tự động.</div>`;
-    box.style.display = 'block';
-  } else {
-    box.style.display = 'none';
-  }
+    </div>
+    <div class="banking-note"><i class="fas fa-info-circle"></i> Quét QR bằng app ngân hàng bất kỳ. Số tiền & nội dung đã được điền tự động.</div>`;
+  box.style.display = 'block';
 }
 
 function openCheckout() {
@@ -403,7 +398,7 @@ function openCheckout() {
 
   document.getElementById('checkoutModal').classList.add('open');
   document.body.style.overflow = 'hidden';
-  setTimeout(toggleBankingInfo, 50);
+  setTimeout(showBankingInfo, 50);
 }
 
 function closeCheckout() {
