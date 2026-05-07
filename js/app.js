@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
   applyFilters();
   renderCart();
   renderFooterCategories(data);
+  renderUserBtn();
 });
 
 function applySettings(s) {
@@ -374,6 +375,168 @@ function openCheckout() {
 function closeCheckout() {
   document.getElementById('checkoutModal').classList.remove('open');
   document.body.style.overflow = '';
+}
+
+// ===== AUTH =====
+let _forgotUserId = null;
+
+function openAuth(tab = 'login') {
+  switchAuthTab(tab);
+  document.getElementById('authModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAuth() {
+  document.getElementById('authModal').classList.remove('open');
+  document.body.style.overflow = '';
+  _forgotUserId = null;
+}
+
+function handleAuthClick(e) {
+  if (e.target === document.getElementById('authModal')) closeAuth();
+}
+
+function switchAuthTab(tab) {
+  ['login','register','forgot'].forEach(t => {
+    const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    const form = document.getElementById('form' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.classList.toggle('active', t === tab);
+    if (form) form.style.display = (t === tab) ? 'block' : 'none';
+  });
+  // Hide forgot tab button khi ở forgot form
+  document.getElementById('tabLogin').style.display = (tab === 'forgot') ? 'none' : '';
+  document.getElementById('tabRegister').style.display = (tab === 'forgot') ? 'none' : '';
+  if (tab === 'forgot') {
+    document.getElementById('resetPassWrap').style.display = 'none';
+    document.getElementById('forgotStep1').style.display = 'block';
+    _forgotUserId = null;
+  }
+}
+
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.innerHTML = show ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+}
+
+function getCurrentUser() {
+  const id = sessionStorage.getItem('mmo_user_id');
+  if (!id) return null;
+  const data = getData();
+  return (data.users || []).find(u => u.id == id) || null;
+}
+
+function renderUserBtn() {
+  const user = getCurrentUser();
+  const btn = document.getElementById('authBtn');
+  const info = document.getElementById('userInfo');
+  if (!btn) return;
+  if (user) {
+    btn.innerHTML = `<i class="fas fa-user-circle"></i> <span>${user.username}</span>`;
+    btn.className = 'auth-btn logged';
+    btn.onclick = () => document.getElementById('userDropdown').classList.toggle('show');
+    if (info) info.innerHTML = `<strong>${user.fullname || user.username}</strong>${user.email}`;
+  } else {
+    btn.innerHTML = '<i class="fas fa-user"></i> <span>Đăng nhập</span>';
+    btn.className = 'auth-btn';
+    btn.onclick = () => openAuth('login');
+    if (info) info.innerHTML = '';
+  }
+}
+
+function doRegisterUser() {
+  const fullname = document.getElementById('regName').value.trim();
+  const username = document.getElementById('regUser').value.trim().toLowerCase().replace(/\s+/g, '');
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const phone = document.getElementById('regPhone').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+
+  if (!fullname || !username || !email || !pass) { showToast('Vui lòng điền đầy đủ thông tin!', 'error'); return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) { showToast('Tên đăng nhập chỉ có chữ, số và dấu gạch!', 'error'); return; }
+  if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { showToast('Email không hợp lệ!', 'error'); return; }
+  if (pass.length < 6) { showToast('Mật khẩu tối thiểu 6 ký tự!', 'error'); return; }
+  if (pass !== pass2) { showToast('Mật khẩu xác nhận không khớp!', 'error'); return; }
+
+  const data = getData();
+  if (!data.users) data.users = [];
+  if (data.users.find(u => u.username === username)) { showToast('Tên đăng nhập đã tồn tại!', 'error'); return; }
+  if (data.users.find(u => u.email === email)) { showToast('Email này đã được đăng ký!', 'error'); return; }
+
+  if (!data.settings.nextUserId) data.settings.nextUserId = 1;
+  const newUser = { id: data.settings.nextUserId++, username, fullname, email, phone, password: pass, createdAt: new Date().toISOString() };
+  data.users.push(newUser);
+  saveData(data);
+
+  sessionStorage.setItem('mmo_user_id', newUser.id);
+  renderUserBtn();
+  closeAuth();
+  showToast(`Chào mừng ${fullname}! Đăng ký thành công ♥`, 'success');
+}
+
+function doLoginUser() {
+  const usernameOrEmail = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+
+  if (!usernameOrEmail || !pass) { showToast('Vui lòng nhập đầy đủ thông tin!', 'error'); return; }
+
+  const data = getData();
+  if (!data.users) data.users = [];
+  const user = data.users.find(u =>
+    (u.username === usernameOrEmail || u.email === usernameOrEmail) && u.password === pass
+  );
+
+  if (!user) { showToast('Sai tên đăng nhập hoặc mật khẩu!', 'error'); return; }
+
+  sessionStorage.setItem('mmo_user_id', user.id);
+  renderUserBtn();
+  closeAuth();
+  showToast(`Chào mừng trở lại, ${user.fullname || user.username}! 👋`, 'success');
+}
+
+function doLogoutUser() {
+  sessionStorage.removeItem('mmo_user_id');
+  document.getElementById('userDropdown').classList.remove('show');
+  renderUserBtn();
+  showToast('Đã đăng xuất thành công!', 'info');
+}
+
+function doForgotUser() {
+  const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+  if (!email) { showToast('Vui lòng nhập email!', 'error'); return; }
+
+  const data = getData();
+  if (!data.users) data.users = [];
+  const user = data.users.find(u => u.email === email);
+
+  if (!user) { showToast('Không tìm thấy tài khoản với email này!', 'error'); return; }
+
+  _forgotUserId = user.id;
+  document.getElementById('forgotStep1').style.display = 'none';
+  document.getElementById('resetPassWrap').style.display = 'block';
+  showToast(`Đã tìm thấy tài khoản: ${user.fullname || user.username}`, 'success');
+}
+
+function doResetPass() {
+  const newPass = document.getElementById('newPass').value;
+  const newPass2 = document.getElementById('newPass2').value;
+
+  if (newPass.length < 6) { showToast('Mật khẩu tối thiểu 6 ký tự!', 'error'); return; }
+  if (newPass !== newPass2) { showToast('Mật khẩu xác nhận không khớp!', 'error'); return; }
+  if (!_forgotUserId) { showToast('Phiên làm việc hết hạn!', 'error'); return; }
+
+  const data = getData();
+  const user = (data.users || []).find(u => u.id === _forgotUserId);
+  if (!user) { showToast('Lỗi không tìm thấy tài khoản!', 'error'); return; }
+
+  user.password = newPass;
+  saveData(data);
+  _forgotUserId = null;
+  closeAuth();
+  showToast('Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+  setTimeout(() => openAuth('login'), 1000);
 }
 
 function handleCheckoutClick(e) {

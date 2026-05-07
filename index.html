@@ -24,6 +24,15 @@
         <button onclick="handleSearch()"><i class="fas fa-search"></i></button>
       </div>
       <div class="header-actions">
+        <div class="user-btn-wrap" id="userBtnWrap">
+          <button class="auth-btn" id="authBtn" onclick="openAuth('login')">
+            <i class="fas fa-user"></i> <span>Đăng nhập</span>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-info" id="userInfo"></div>
+            <button onclick="doLogoutUser()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+          </div>
+        </div>
         <a href="admin.html" class="admin-btn" title="Quản trị viên">
           <i class="fas fa-cog"></i>
         </a>
@@ -217,6 +226,104 @@
       <button class="modal-close" onclick="closeCheckout()" style="position:absolute;top:14px;right:14px"><i class="fas fa-times"></i></button>
       <h2><i class="fas fa-credit-card" style="color:var(--primary);margin-right:8px"></i>Thanh toán</h2>
       <div id="checkoutContent"></div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="authModal" onclick="handleAuthClick(event)">
+    <div class="auth-modal">
+      <button class="modal-close" onclick="closeAuth()"><i class="fas fa-times"></i></button>
+      <div class="auth-logo"><i class="fas fa-dragon"></i> MMO<span>Shop</span></div>
+
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Đăng nhập</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Đăng ký</button>
+      </div>
+
+      <!-- Login Form -->
+      <div class="auth-form" id="formLogin">
+        <div class="form-group">
+          <label>Email hoặc Tên đăng nhập</label>
+          <input type="text" id="loginUser" placeholder="email@gmail.com hoặc username" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu</label>
+          <div class="pw-wrap">
+            <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLoginUser()">
+            <button type="button" onclick="togglePw('loginPass',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="auth-forgot"><a href="#" onclick="switchAuthTab('forgot');return false">Quên mật khẩu?</a></div>
+        <button class="btn-auth" onclick="doLoginUser()"><i class="fas fa-sign-in-alt"></i> Đăng nhập</button>
+        <p class="auth-switch">Chưa có tài khoản? <a href="#" onclick="switchAuthTab('register');return false">Đăng ký ngay</a></p>
+      </div>
+
+      <!-- Register Form -->
+      <div class="auth-form" id="formRegister" style="display:none">
+        <div class="form-group">
+          <label>Họ và tên</label>
+          <input type="text" id="regName" placeholder="Nguyễn Văn A">
+        </div>
+        <div class="form-group">
+          <label>Tên đăng nhập</label>
+          <input type="text" id="regUser" placeholder="username (không dấu, không khoảng trắng)">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="email@gmail.com">
+        </div>
+        <div class="form-group">
+          <label>Số điện thoại</label>
+          <input type="tel" id="regPhone" placeholder="0912345678">
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu</label>
+          <div class="pw-wrap">
+            <input type="password" id="regPass" placeholder="Tối thiểu 6 ký tự">
+            <button type="button" onclick="togglePw('regPass',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Xác nhận mật khẩu</label>
+          <div class="pw-wrap">
+            <input type="password" id="regPass2" placeholder="Nhập lại mật khẩu" onkeydown="if(event.key==='Enter')doRegisterUser()">
+            <button type="button" onclick="togglePw('regPass2',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <button class="btn-auth" onclick="doRegisterUser()"><i class="fas fa-user-plus"></i> Tạo tài khoản</button>
+        <p class="auth-switch">Đã có tài khoản? <a href="#" onclick="switchAuthTab('login');return false">Đăng nhập</a></p>
+      </div>
+
+      <!-- Forgot Password Form -->
+      <div class="auth-form" id="formForgot" style="display:none">
+        <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Nhập email đã đăng ký. Hệ thống sẽ cho phép bạn đặt lại mật khẩu mới.</p>
+        <div class="form-group">
+          <label>Email đã đăng ký</label>
+          <input type="email" id="forgotEmail" placeholder="email@gmail.com" onkeydown="if(event.key==='Enter')doForgotUser()">
+        </div>
+        <div id="resetPassWrap" style="display:none">
+          <div class="form-group">
+            <label>Mật khẩu mới</label>
+            <div class="pw-wrap">
+              <input type="password" id="newPass" placeholder="Tối thiểu 6 ký tự">
+              <button type="button" onclick="togglePw('newPass',this)"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Xác nhận mật khẩu mới</label>
+            <div class="pw-wrap">
+              <input type="password" id="newPass2" placeholder="Nhập lại mật khẩu">
+              <button type="button" onclick="togglePw('newPass2',this)"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <button class="btn-auth" onclick="doResetPass()"><i class="fas fa-lock"></i> Đặt lại mật khẩu</button>
+        </div>
+        <div id="forgotStep1">
+          <button class="btn-auth" onclick="doForgotUser()"><i class="fas fa-search"></i> Tìm tài khoản</button>
+        </div>
+        <p class="auth-switch"><a href="#" onclick="switchAuthTab('login');return false"><i class="fas fa-arrow-left"></i> Quay lại đăng nhập</a></p>
+      </div>
     </div>
   </div>
 

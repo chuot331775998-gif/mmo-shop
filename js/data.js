@@ -16,8 +16,10 @@ const INITIAL_DATA = {
     adminPassword: "admin123",
     nextProductId: 164,
     nextOrderId: 11,
-    nextCategoryId: 9
+    nextCategoryId: 9,
+    nextUserId: 1
   },
+  users: [],
   categories: [
     { id: 1, name: "Tài khoản Game", icon: "fas fa-gamepad", color: "#e94560", slug: "tai-khoan", active: true, description: "Tài khoản game các loại đã nâng cấp sẵn" },
     { id: 2, name: "Tiền tệ Game", icon: "fas fa-coins", color: "#f5a623", slug: "tien-te", active: true, description: "Kim cương, vàng, UC, V-bucks và tiền tệ in-game" },
