@@ -287,7 +287,7 @@ function initData() {
   } else {
     try {
       const existing = JSON.parse(raw);
-      if (!existing.settings || existing.settings.nextProductId < 164) {
+      if (!existing.settings || existing.settings.nextProductId < 194 || existing.settings.nextCategoryId < 10) {
         localStorage.setItem('mmo_data_v2', JSON.stringify(INITIAL_DATA));
       } else {
         // Patch dữ liệu cũ thiếu field mới
