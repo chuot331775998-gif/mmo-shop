@@ -340,14 +340,53 @@ function toggleCart() {
 }
 
 // ===== CHECKOUT =====
+const BANK_INFO = {
+  bank: 'VIB',
+  account: '089964571',
+  name: 'LE HOANG VIET',
+  displayName: 'LÊ HOÀNG VIỆT'
+};
+let _checkoutTotal = 0;
+
+function buildVietQR(amount, content) {
+  const enc = encodeURIComponent;
+  return `https://img.vietqr.io/image/${BANK_INFO.bank}-${BANK_INFO.account}-compact2.png?amount=${amount}&addInfo=${enc(content)}&accountName=${enc(BANK_INFO.name)}`;
+}
+
+function toggleBankingInfo() {
+  const sel = document.getElementById('co-payment');
+  const box = document.getElementById('bankingBox');
+  if (!box || !sel) return;
+  if (sel.value === 'Banking') {
+    const orderId = 'MMOSHOP' + Date.now().toString().slice(-6);
+    const qrUrl = buildVietQR(_checkoutTotal, orderId);
+    box.innerHTML = `
+      <div class="bk-title"><i class="fas fa-university"></i> Thông tin chuyển khoản</div>
+      <div class="banking-qr-wrap">
+        <img src="${qrUrl}" alt="QR VietQR" onerror="this.src='https://placehold.co/140x140/1e1e35/7c3aed?text=QR'">
+        <div class="banking-detail">
+          <div class="bd-row"><span class="bd-label">Ngân hàng</span><span class="bd-val">VIB Bank</span></div>
+          <div class="bd-row"><span class="bd-label">Số tài khoản</span><span class="bd-val green">${BANK_INFO.account}</span></div>
+          <div class="bd-row"><span class="bd-label">Chủ tài khoản</span><span class="bd-val">${BANK_INFO.displayName}</span></div>
+          <div class="bd-row"><span class="bd-label">Số tiền</span><span class="bd-val accent">${formatPrice(_checkoutTotal)}</span></div>
+          <div class="bd-row"><span class="bd-label">Nội dung CK</span><span class="bd-val" style="color:var(--gold)">${orderId}</span></div>
+        </div>
+      </div>
+      <div class="banking-note"><i class="fas fa-info-circle"></i> Quét QR bằng app ngân hàng bất kỳ. Số tiền & nội dung đã được điền tự động.</div>`;
+    box.style.display = 'block';
+  } else {
+    box.style.display = 'none';
+  }
+}
+
 function openCheckout() {
   if (cart.length === 0) { showToast('Giỏ hàng đang trống!', 'error'); return; }
-  const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  _checkoutTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
 
   document.getElementById('checkoutContent').innerHTML = `
     <div class="checkout-summary">
       ${cart.map(i => `<div class="row"><span>${i.name} x${i.qty}</span><span>${formatPrice(i.price * i.qty)}</span></div>`).join('')}
-      <div class="row"><span>Tổng thanh toán</span><span>${formatPrice(total)}</span></div>
+      <div class="row"><span>Tổng thanh toán</span><span>${formatPrice(_checkoutTotal)}</span></div>
     </div>
     <div class="form-group" style="margin-bottom:14px">
       <label style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px">Họ tên</label>
@@ -357,19 +396,24 @@ function openCheckout() {
       <label style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px">Số điện thoại / Email</label>
       <input type="text" id="co-contact" placeholder="0912345678 hoặc email@gmail.com" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:10px;font-size:14px;font-family:inherit">
     </div>
-    <div class="form-group" style="margin-bottom:20px">
+    <div class="form-group" style="margin-bottom:6px">
       <label style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px">Phương thức thanh toán</label>
-      <select id="co-payment" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer">
+      <select id="co-payment" onchange="toggleBankingInfo()" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer">
+        <option value="Banking">🏦 Chuyển khoản ngân hàng (QR)</option>
         <option value="Momo">💗 Ví Momo</option>
-        <option value="Banking">🏦 Chuyển khoản ngân hàng</option>
         <option value="Viettel Money">📱 Viettel Money</option>
         <option value="ZaloPay">💙 ZaloPay</option>
       </select>
     </div>
-    <button class="btn-confirm" onclick="confirmOrder()"><i class="fas fa-check-circle"></i> Xác nhận đặt hàng - ${formatPrice(total)}</button>`;
+    <div id="bankingBox" class="banking-box"></div>
+    <div style="margin-top:18px">
+      <button class="btn-confirm" onclick="confirmOrder()"><i class="fas fa-check-circle"></i> Xác nhận đặt hàng - ${formatPrice(_checkoutTotal)}</button>
+    </div>`;
 
   document.getElementById('checkoutModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+  // Tự động hiển thị QR banking vì là lựa chọn mặc định
+  setTimeout(toggleBankingInfo, 50);
 }
 
 function closeCheckout() {
@@ -551,12 +595,15 @@ function confirmOrder() {
 
   const data = getData();
   const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const transferContent = 'MMOSHOP' + (data.settings.nextOrderId + '').padStart(4, '0');
   const newOrder = {
     id: data.settings.nextOrderId++,
     date: new Date().toISOString(),
     customer: { name, email: contact.includes('@') ? contact : '', phone: !contact.includes('@') ? contact : '' },
     items: cart.map(i => ({ productId: i.id, name: i.name, qty: i.qty, price: i.price })),
-    total, status: 'pending', paymentMethod: payment
+    total, status: payment === 'Banking' ? 'pending_payment' : 'pending',
+    paymentMethod: payment,
+    transferContent: payment === 'Banking' ? transferContent : ''
   };
   data.orders.unshift(newOrder);
   saveData(data);
@@ -566,10 +613,49 @@ function confirmOrder() {
   renderCart();
   closeCheckout();
   toggleCart();
-
   document.getElementById('checkoutContent').innerHTML = '';
-  showToast('🎉 Đặt hàng thành công! Chúng tôi sẽ liên hệ bạn sớm.', 'success');
-  setTimeout(() => showToast(`📦 Mã đơn hàng: #${newOrder.id}`, 'info'), 600);
+
+  if (payment === 'Banking') {
+    showPayQRModal(total, transferContent, newOrder.id);
+  } else {
+    showToast('🎉 Đặt hàng thành công! Chúng tôi sẽ liên hệ bạn sớm.', 'success');
+    setTimeout(() => showToast(`📦 Mã đơn hàng: #${newOrder.id}`, 'info'), 600);
+  }
+}
+
+function showPayQRModal(total, content, orderId) {
+  const qrUrl = buildVietQR(total, content);
+  const modal = document.getElementById('payQRModal');
+  document.getElementById('payQRContent').innerHTML = `
+    <div style="position:relative">
+      <button class="modal-close" onclick="closePayQR()" style="position:absolute;top:-10px;right:-10px"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="margin-bottom:8px;font-size:18px">🎉</div>
+    <h2>Đặt hàng thành công!</h2>
+    <p class="sub">Quét QR để hoàn tất thanh toán. Đơn hàng sẽ được xử lý sau khi nhận tiền.</p>
+    <img class="qr-big" src="${qrUrl}" alt="QR VietQR" onerror="this.src='https://placehold.co/220x220/1e1e35/7c3aed?text=QR'">
+    <div class="pay-info-table">
+      <div class="pi-row"><span style="color:var(--muted)">Ngân hàng</span><span>VIB Bank</span></div>
+      <div class="pi-row"><span style="color:var(--muted)">Số tài khoản</span><span style="color:var(--green)">${BANK_INFO.account}</span></div>
+      <div class="pi-row"><span style="color:var(--muted)">Chủ tài khoản</span><span>${BANK_INFO.displayName}</span></div>
+      <div class="pi-row"><span style="color:var(--muted)">Số tiền</span><span class="pi-amount">${formatPrice(total)}</span></div>
+      <div class="pi-row"><span style="color:var(--muted)">Nội dung CK</span><span class="pi-content" id="pi-content-text">${content}</span></div>
+      <div class="pi-row"><span style="color:var(--muted)">Mã đơn hàng</span><span>#${orderId}</span></div>
+    </div>
+    <button class="btn-copied" onclick="copyContent('${content}')"><i class="fas fa-copy"></i> Sao chép nội dung CK</button>
+    <button class="btn-done-order" onclick="closePayQR()"><i class="fas fa-check"></i> Đã chuyển khoản xong</button>`;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function copyContent(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Đã sao chép nội dung chuyển khoản!', 'success'));
+}
+
+function closePayQR() {
+  document.getElementById('payQRModal').classList.remove('open');
+  document.body.style.overflow = '';
+  showToast('🎉 Cảm ơn! Đơn hàng sẽ được xử lý sau khi xác nhận thanh toán.', 'success');
 }
 
 // ===== TOAST =====

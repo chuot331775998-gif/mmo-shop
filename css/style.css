@@ -261,6 +261,35 @@ input, select { font-family: inherit; outline: none; }
 .btn-confirm { width: 100%; background: linear-gradient(90deg,#7c3aed,#e94560); color: #fff; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition); margin-bottom: 8px; }
 .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,58,237,.4); }
 
+/* ==================== BANKING QR ==================== */
+.banking-box { background: var(--bg3); border: 1px solid var(--primary); border-radius: 14px; padding: 20px 16px; margin-top: 14px; animation: slideUp .25s ease; }
+.banking-box .bk-title { font-size: 13px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+.banking-qr-wrap { display: flex; gap: 16px; align-items: flex-start; }
+.banking-qr-wrap img { width: 140px; height: 140px; border-radius: 10px; border: 3px solid #fff; flex-shrink: 0; background: #fff; }
+.banking-detail { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.bd-row { display: flex; flex-direction: column; gap: 2px; }
+.bd-row .bd-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.bd-row .bd-val { font-size: 13px; font-weight: 700; color: var(--text); }
+.bd-row .bd-val.accent { color: var(--accent); font-size: 16px; }
+.bd-row .bd-val.green { color: var(--green); }
+.banking-note { margin-top: 12px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: rgba(124,58,237,.1); border-radius: 8px; border-left: 3px solid var(--primary); }
+
+/* QR sau khi đặt hàng */
+.pay-qr-modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 18px; width: 100%; max-width: 420px; padding: 32px 28px; text-align: center; animation: slideUp .3s ease; }
+.pay-qr-modal h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+.pay-qr-modal .sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+.pay-qr-modal .qr-big { width: 220px; height: 220px; border-radius: 12px; border: 4px solid var(--primary); margin: 0 auto 20px; display: block; background: #fff; }
+.pay-info-table { text-align: left; background: var(--bg3); border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; }
+.pay-info-table .pi-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.pay-info-table .pi-row:last-child { border: none; }
+.pay-info-table .pi-row span:last-child { font-weight: 700; color: var(--text); }
+.pay-info-table .pi-row .pi-amount { color: var(--accent); font-size: 16px; }
+.pay-info-table .pi-row .pi-content { color: var(--gold); }
+.btn-copied { background: var(--green); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition); }
+.btn-copied:hover { opacity: .85; }
+.btn-done-order { width: 100%; background: linear-gradient(90deg,#7c3aed,#e94560); color: #fff; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 700; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition); }
+.btn-done-order:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(124,58,237,.4); }
+
 /* ==================== RESPONSIVE ==================== */
 /* ==================== AUTH ==================== */
 .auth-btn { background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 9px 16px; border-radius: var(--radius); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px; transition: var(--transition); white-space: nowrap; }
