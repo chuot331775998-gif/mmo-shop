@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MMO Shop VN - Tài Nguyên Game Chất Lượng</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header" id="header">
+    <div class="announcement-bar">
+      <marquee id="announcementText">🎮 Chào mừng đến MMO Shop VN | ✅ Bảo hành 7 ngày | 🚀 Giao hàng tự động 24/7 | 💎 Hơn 500 sản phẩm chất lượng | 🎁 Giảm giá lên đến 50%</marquee>
+    </div>
+    <div class="header-main container">
+      <div class="logo">
+        <i class="fas fa-dragon"></i>
+        <span>MMO<span class="accent">Shop</span></span>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Tìm kiếm tài nguyên game..." oninput="handleSearch()">
+        <button onclick="handleSearch()"><i class="fas fa-search"></i></button>
+      </div>
+      <div class="header-actions">
+        <a href="admin.html" class="admin-btn" title="Quản trị viên">
+          <i class="fas fa-cog"></i>
+        </a>
+        <button class="cart-btn" onclick="toggleCart()">
+          <i class="fas fa-shopping-cart"></i>
+          <span class="cart-count" id="cartCount">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="hero-content container">
+      <div class="hero-text">
+        <div class="hero-badge">🎮 #1 Cửa hàng MMO Việt Nam</div>
+        <h1 id="heroTitle">Tài Nguyên MMO<br><span class="gradient-text">Chất Lượng Cao</span></h1>
+        <p id="heroSubtitle">Hơn 500+ sản phẩm đa dạng · Giao hàng tự động 24/7<br>Bảo hành toàn bộ sản phẩm · Hỗ trợ 24/7</p>
+        <div class="hero-buttons">
+          <button onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})" class="btn-primary">
+            <i class="fas fa-shopping-bag"></i> Mua ngay
+          </button>
+          <button onclick="document.getElementById('categories').scrollIntoView({behavior:'smooth'})" class="btn-secondary">
+            <i class="fas fa-th-large"></i> Xem danh mục
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><span>10K+</span><p>Khách hàng</p></div>
+          <div class="stat"><span>500+</span><p>Sản phẩm</p></div>
+          <div class="stat"><span>99%</span><p>Hài lòng</p></div>
+          <div class="stat"><span>24/7</span><p>Hỗ trợ</p></div>
+        </div>
+      </div>
+      <div class="hero-image">
+        <div class="hero-cards">
+          <div class="float-card card1"><i class="fas fa-gamepad"></i><span>Tài khoản</span></div>
+          <div class="float-card card2"><i class="fas fa-coins"></i><span>Tiền tệ</span></div>
+          <div class="float-card card3"><i class="fas fa-gem"></i><span>Vật phẩm</span></div>
+          <div class="float-card card4"><i class="fas fa-key"></i><span>Key Game</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-wave">
+      <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg"><path fill="#0f0f1a" d="M0,40L80,45C160,50,320,60,480,55C640,50,800,30,960,25C1120,20,1280,35,1360,42L1440,50L1440,80L0,80Z"></path></svg>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="categories-section" id="categories">
+    <div class="container">
+      <div class="section-header">
+        <h2>Danh Mục Sản Phẩm</h2>
+        <p>Chọn danh mục bạn quan tâm để xem sản phẩm</p>
+      </div>
+      <div class="categories-grid" id="categoriesGrid"></div>
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="featured-section">
+    <div class="container">
+      <div class="section-header">
+        <h2><i class="fas fa-fire text-orange"></i> Sản Phẩm Nổi Bật</h2>
+        <p>Được mua nhiều nhất và đánh giá cao nhất</p>
+      </div>
+      <div class="products-grid" id="featuredGrid"></div>
+    </div>
+  </section>
+
+  <!-- All Products -->
+  <section class="products-section" id="products">
+    <div class="container">
+      <div class="section-header">
+        <h2>Tất Cả Sản Phẩm</h2>
+        <p>Hơn 500+ tài nguyên game đa dạng chất lượng cao</p>
+      </div>
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="filter-tabs" id="filterTabs">
+          <button class="filter-tab active" onclick="filterByCategory(0,this)">Tất cả</button>
+        </div>
+        <div class="filter-controls">
+          <select id="sortSelect" onchange="applyFilters()">
+            <option value="default">Sắp xếp mặc định</option>
+            <option value="price-asc">Giá: Thấp → Cao</option>
+            <option value="price-desc">Giá: Cao → Thấp</option>
+            <option value="sold">Bán chạy nhất</option>
+            <option value="rating">Đánh giá cao nhất</option>
+          </select>
+          <div class="price-filter">
+            <input type="number" id="minPrice" placeholder="Giá từ" oninput="applyFilters()" min="0">
+            <span>—</span>
+            <input type="number" id="maxPrice" placeholder="Giá đến" oninput="applyFilters()" min="0">
+          </div>
+        </div>
+      </div>
+      <div class="products-grid" id="productsGrid"></div>
+      <div class="load-more-container">
+        <button class="btn-load-more" id="loadMoreBtn" onclick="loadMore()">
+          <i class="fas fa-plus"></i> Xem thêm sản phẩm
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="logo"><i class="fas fa-dragon"></i> MMO<span>Shop</span></div>
+          <p>Cửa hàng tài nguyên MMO hàng đầu Việt Nam. Cam kết chất lượng, bảo hành toàn bộ sản phẩm, hỗ trợ khách hàng 24/7.</p>
+          <div class="social-links">
+            <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+            <a href="#" title="Discord"><i class="fab fa-discord"></i></a>
+            <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
+            <a href="#" title="TikTok"><i class="fab fa-tiktok"></i></a>
+          </div>
+        </div>
+        <div class="footer-links">
+          <h4>Danh mục</h4>
+          <ul id="footerCategories"></ul>
+        </div>
+        <div class="footer-links">
+          <h4>Hỗ trợ</h4>
+          <ul>
+            <li><a href="#">Chính sách bảo hành</a></li>
+            <li><a href="#">Hướng dẫn mua hàng</a></li>
+            <li><a href="#">Câu hỏi thường gặp</a></li>
+            <li><a href="#">Liên hệ hỗ trợ</a></li>
+            <li><a href="#">Chính sách hoàn tiền</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Liên hệ</h4>
+          <p><i class="fab fa-facebook"></i> <span id="footerFb">fb.com/mmoshopvn</span></p>
+          <p><i class="fab fa-discord"></i> <span id="footerDc">discord.gg/mmoshop</span></p>
+          <p><i class="fas fa-envelope"></i> <span id="footerEmail">support@mmoshop.vn</span></p>
+          <p><i class="fab fa-telegram"></i> <span id="footerTg">t.me/mmoshopvn</span></p>
+          <div class="payment-methods">
+            <span>Phương thức thanh toán:</span>
+            <div class="pay-badges">
+              <span class="pay-badge">MOMO</span>
+              <span class="pay-badge">BANKING</span>
+              <span class="pay-badge">VIETTEL</span>
+              <span class="pay-badge">ZALOPAY</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2024 MMO Shop VN. All rights reserved.</p>
+        <p>Được tạo với <i class="fas fa-heart text-red"></i> cho cộng đồng game thủ Việt Nam</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Cart Sidebar -->
+  <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+  <div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+      <h3><i class="fas fa-shopping-cart"></i> Giỏ hàng</h3>
+      <button onclick="toggleCart()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer" id="cartFooter" style="display:none">
+      <div class="cart-total">
+        <span>Tổng cộng:</span>
+        <span class="total-price" id="cartTotal">0 ₫</span>
+      </div>
+      <button class="btn-checkout" onclick="openCheckout()">
+        <i class="fas fa-credit-card"></i> Thanh toán ngay
+      </button>
+      <button class="btn-clear-cart" onclick="clearCart()">
+        <i class="fas fa-trash"></i> Xóa giỏ hàng
+      </button>
+    </div>
+  </div>
+
+  <!-- Product Detail Modal -->
+  <div class="modal-overlay" id="productModal" onclick="handleModalClick(event)">
+    <div class="product-modal" id="productModalInner">
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+      <div class="modal-grid" id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal-overlay" id="checkoutModal" onclick="handleCheckoutClick(event)">
+    <div class="checkout-modal" id="checkoutInner">
+      <button class="modal-close" onclick="closeCheckout()" style="position:absolute;top:14px;right:14px"><i class="fas fa-times"></i></button>
+      <h2><i class="fas fa-credit-card" style="color:var(--primary);margin-right:8px"></i>Thanh toán</h2>
+      <div id="checkoutContent"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

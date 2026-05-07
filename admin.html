@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - MMO Shop VN</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <i class="fas fa-dragon"></i>
+      <h1>MMO<span style="color:var(--accent)">Shop</span> Admin</h1>
+      <p>Đăng nhập vào bảng quản trị</p>
+    </div>
+    <div class="login-error" id="loginError"><i class="fas fa-exclamation-circle"></i> Tên đăng nhập hoặc mật khẩu không đúng!</div>
+    <form class="login-form" onsubmit="doLogin(event)">
+      <div class="form-group">
+        <label>Tên đăng nhập</label>
+        <div class="input-wrap">
+          <i class="fas fa-user"></i>
+          <input type="text" id="loginUser" placeholder="Nhập tên đăng nhập" value="admin">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu</label>
+        <div class="input-wrap">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="loginPass" placeholder="Nhập mật khẩu" value="admin123">
+        </div>
+      </div>
+      <button type="submit" class="btn-login"><i class="fas fa-sign-in-alt"></i> Đăng nhập</button>
+    </form>
+    <p class="login-hint">Mặc định: admin / admin123 (có thể đổi trong Cài đặt)</p>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="admin-layout" style="display:none">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-logo">
+      <i class="fas fa-dragon"></i>
+      <span>MMO<span class="a">Shop</span></span>
+      <small>ADMIN</small>
+    </div>
+    <nav class="admin-nav">
+      <div class="nav-section">Tổng quan</div>
+      <a href="#" onclick="showPage('dashboard')" id="nav-dashboard" class="active">
+        <i class="fas fa-chart-pie"></i> Dashboard
+      </a>
+      <div class="nav-section">Quản lý</div>
+      <a href="#" onclick="showPage('products')" id="nav-products">
+        <i class="fas fa-box-open"></i> Sản phẩm
+        <span class="nav-badge" id="navProdCount">0</span>
+      </a>
+      <a href="#" onclick="showPage('categories')" id="nav-categories">
+        <i class="fas fa-tags"></i> Danh mục
+      </a>
+      <a href="#" onclick="showPage('orders')" id="nav-orders">
+        <i class="fas fa-shopping-bag"></i> Đơn hàng
+        <span class="nav-badge" id="navOrderCount">0</span>
+      </a>
+      <div class="nav-section">Hệ thống</div>
+      <a href="#" onclick="showPage('settings')" id="nav-settings">
+        <i class="fas fa-cog"></i> Cài đặt
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="index.html" target="_blank"><i class="fas fa-external-link-alt"></i> Xem trang web</a>
+      <a href="#" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <!-- Topbar -->
+    <div class="admin-topbar">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="topbar-actions">
+        <div class="topbar-user"><i class="fas fa-user-circle"></i> <span id="topbarUser">Admin</span></div>
+      </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="admin-content">
+      <!-- ===== DASHBOARD ===== -->
+      <div id="page-dashboard">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div style="margin-bottom:24px">
+          <div class="chart-wrap">
+            <h2><i class="fas fa-chart-bar" style="color:var(--primary);margin-right:8px"></i>Doanh thu theo tháng</h2>
+            <div class="chart-bars" id="chartBars"></div>
+          </div>
+        </div>
+        <div class="dash-grid">
+          <div class="recent-orders admin-table-wrap">
+            <div class="rh" style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <h2 style="font-size:16px;font-weight:700"><i class="fas fa-clock" style="color:var(--primary);margin-right:8px"></i>Đơn hàng gần đây</h2>
+              <a href="#" onclick="showPage('orders')" style="font-size:13px;color:var(--primary)">Xem tất cả →</a>
+            </div>
+            <div id="recentOrdersTable"></div>
+          </div>
+          <div class="top-products">
+            <div class="rh" style="padding:16px 20px;border-bottom:1px solid var(--border)">
+              <h2 style="font-size:16px;font-weight:700"><i class="fas fa-trophy" style="color:var(--gold);margin-right:8px"></i>Top sản phẩm bán chạy</h2>
+            </div>
+            <div id="topProductsList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PRODUCTS ===== -->
+      <div id="page-products" style="display:none">
+        <div class="admin-table-wrap">
+          <div class="table-header">
+            <h2><i class="fas fa-box-open" style="color:var(--primary);margin-right:8px"></i>Danh sách sản phẩm (<span id="prodCount">0</span>)</h2>
+            <div class="table-actions">
+              <input type="text" class="table-search" id="prodSearch" placeholder="Tìm kiếm sản phẩm..." oninput="renderProductsTable()">
+              <select class="table-filter" id="prodCatFilter" onchange="renderProductsTable()">
+                <option value="0">Tất cả danh mục</option>
+              </select>
+              <select class="table-filter" id="prodStatusFilter" onchange="renderProductsTable()">
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Đang bán</option>
+                <option value="inactive">Ẩn</option>
+                <option value="hot">HOT</option>
+                <option value="featured">Nổi bật</option>
+              </select>
+              <button class="btn-add" onclick="openProductModal()"><i class="fas fa-plus"></i> Thêm sản phẩm</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th>#</th><th>Sản phẩm</th><th>Danh mục</th><th>Giá</th>
+                <th>Kho</th><th>Đã bán</th><th>Trạng thái</th><th>Thao tác</th>
+              </tr></thead>
+              <tbody id="productsTableBody"></tbody>
+            </table>
+          </div>
+          <div class="table-pagination">
+            <span id="prodPaginationInfo">Hiển thị 0 sản phẩm</span>
+            <div class="pagination-btns" id="prodPaginationBtns"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CATEGORIES ===== -->
+      <div id="page-categories" style="display:none">
+        <div class="admin-table-wrap" style="margin-bottom:24px">
+          <div class="table-header">
+            <h2><i class="fas fa-tags" style="color:var(--primary);margin-right:8px"></i>Quản lý danh mục</h2>
+            <button class="btn-add-cat" onclick="openCatModal()"><i class="fas fa-plus"></i> Thêm danh mục</button>
+          </div>
+          <div class="cats-grid" id="catsGrid" style="padding:20px"></div>
+        </div>
+      </div>
+
+      <!-- ===== ORDERS ===== -->
+      <div id="page-orders" style="display:none">
+        <div class="admin-table-wrap">
+          <div class="table-header">
+            <h2><i class="fas fa-shopping-bag" style="color:var(--primary);margin-right:8px"></i>Quản lý đơn hàng (<span id="orderCount">0</span>)</h2>
+            <div class="table-actions">
+              <input type="text" class="table-search" id="orderSearch" placeholder="Tìm kiếm đơn hàng..." oninput="renderOrdersTable()">
+              <select class="table-filter" id="orderStatusFilter" onchange="renderOrdersTable()">
+                <option value="all">Tất cả</option>
+                <option value="pending">Chờ xử lý</option>
+                <option value="processing">Đang xử lý</option>
+                <option value="completed">Hoàn thành</option>
+                <option value="cancelled">Đã hủy</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th>Mã ĐH</th><th>Khách hàng</th><th>Sản phẩm</th><th>Tổng tiền</th>
+                <th>Ngày đặt</th><th>Thanh toán</th><th>Trạng thái</th><th>Thao tác</th>
+              </tr></thead>
+              <tbody id="ordersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div id="page-settings" style="display:none">
+        <div class="settings-grid">
+          <div class="settings-card">
+            <div class="settings-card-header"><i class="fas fa-globe"></i><h2>Thông tin website</h2></div>
+            <div class="settings-card-body">
+              <div class="form-group"><label>Tên website</label><input type="text" id="set-siteName"></div>
+              <div class="form-group"><label>Tiêu đề Hero</label><input type="text" id="set-heroTitle"></div>
+              <div class="form-group"><label>Mô tả Hero</label><textarea id="set-heroSubtitle" rows="2"></textarea></div>
+              <div class="form-group"><label>Thông báo (marquee)</label><textarea id="set-announcement" rows="2"></textarea></div>
+              <button class="btn-save-settings" onclick="saveSettings('site')"><i class="fas fa-save"></i> Lưu thay đổi</button>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-header"><i class="fas fa-address-card"></i><h2>Thông tin liên hệ</h2></div>
+            <div class="settings-card-body">
+              <div class="form-group"><label>Facebook</label><input type="text" id="set-facebook"></div>
+              <div class="form-group"><label>Discord</label><input type="text" id="set-discord"></div>
+              <div class="form-group"><label>Email</label><input type="email" id="set-email"></div>
+              <div class="form-group"><label>Telegram</label><input type="text" id="set-telegram"></div>
+              <button class="btn-save-settings" onclick="saveSettings('contact')"><i class="fas fa-save"></i> Lưu thay đổi</button>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-header"><i class="fas fa-lock"></i><h2>Đổi mật khẩu Admin</h2></div>
+            <div class="settings-card-body">
+              <div class="form-group"><label>Tên đăng nhập mới</label><input type="text" id="set-adminUser"></div>
+              <div class="form-group"><label>Mật khẩu hiện tại</label><input type="password" id="set-curPass" placeholder="Nhập mật khẩu hiện tại"></div>
+              <div class="form-group"><label>Mật khẩu mới</label><input type="password" id="set-newPass" placeholder="Nhập mật khẩu mới"></div>
+              <div class="form-group"><label>Xác nhận mật khẩu</label><input type="password" id="set-confPass" placeholder="Nhập lại mật khẩu mới"></div>
+              <button class="btn-save-settings" onclick="saveSettings('password')"><i class="fas fa-key"></i> Đổi mật khẩu</button>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-header"><i class="fas fa-database"></i><h2>Quản lý dữ liệu</h2></div>
+            <div class="settings-card-body">
+              <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Tất cả dữ liệu được lưu trên trình duyệt của bạn (localStorage). Bạn có thể xuất hoặc reset về dữ liệu gốc.</p>
+              <button class="btn-save-settings" onclick="exportData()"><i class="fas fa-download"></i> Xuất dữ liệu (JSON)</button>
+              <button class="btn-danger" onclick="confirmReset()"><i class="fas fa-undo"></i> Reset về dữ liệu mặc định</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- PRODUCT MODAL FORM -->
+<div class="modal-bg" id="productModalBg">
+  <div class="modal-form">
+    <div class="modal-form-header">
+      <h2 id="productModalTitle"><i class="fas fa-plus" style="color:var(--primary);margin-right:6px"></i>Thêm sản phẩm mới</h2>
+      <button onclick="closeProductModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-form-body">
+      <input type="hidden" id="prod-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tên sản phẩm *</label>
+          <input type="text" id="prod-name" placeholder="Nhập tên sản phẩm">
+        </div>
+        <div class="form-group">
+          <label>Tên game</label>
+          <input type="text" id="prod-game" placeholder="Ví dụ: Free Fire">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Danh mục *</label>
+          <select id="prod-category"></select>
+        </div>
+        <div class="form-group">
+          <label>Nhãn (badge)</label>
+          <select id="prod-badge">
+            <option value="">Không có</option>
+            <option value="HOT">HOT</option>
+            <option value="SALE">SALE</option>
+            <option value="VIP">VIP</option>
+            <option value="HIẾM">HIẾM</option>
+            <option value="MỚI">MỚI</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Giá bán (VNĐ) *</label>
+          <input type="number" id="prod-price" placeholder="250000" min="0">
+        </div>
+        <div class="form-group">
+          <label>Giá gốc (VNĐ)</label>
+          <input type="number" id="prod-originalPrice" placeholder="350000" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Số lượng tồn kho</label>
+          <input type="number" id="prod-stock" placeholder="10" min="0">
+        </div>
+        <div class="form-group">
+          <label>URL hình ảnh</label>
+          <input type="text" id="prod-image" placeholder="https://...">
+          <div class="hint">Để trống để dùng ảnh tự động</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Mô tả ngắn</label>
+        <textarea id="prod-description" rows="2" placeholder="Mô tả ngắn gọn về sản phẩm..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Chi tiết sản phẩm</label>
+        <textarea id="prod-details" rows="4" placeholder="• Thông tin chi tiết&#10;• Điều kiện&#10;• Bảo hành..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Tùy chọn</label>
+        <div class="form-checkboxes">
+          <label class="form-check"><input type="checkbox" id="prod-featured"> Sản phẩm nổi bật</label>
+          <label class="form-check"><input type="checkbox" id="prod-hot"> Đánh dấu HOT</label>
+          <label class="form-check"><input type="checkbox" id="prod-active" checked> Đang bán</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-form-footer">
+      <button class="btn-cancel" onclick="closeProductModal()">Hủy</button>
+      <button class="btn-save" onclick="saveProduct()"><i class="fas fa-save"></i> Lưu sản phẩm</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY MODAL FORM -->
+<div class="modal-bg" id="catModalBg">
+  <div class="modal-form" style="max-width:480px">
+    <div class="modal-form-header">
+      <h2 id="catModalTitle"><i class="fas fa-plus" style="color:var(--green);margin-right:6px"></i>Thêm danh mục</h2>
+      <button onclick="closeCatModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-form-body">
+      <input type="hidden" id="cat-id">
+      <div class="form-group">
+        <label>Tên danh mục *</label>
+        <input type="text" id="cat-name" placeholder="Tên danh mục">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Icon (Font Awesome class)</label>
+          <input type="text" id="cat-icon" placeholder="fas fa-gamepad">
+          <div class="hint">Xem tại fontawesome.com/icons</div>
+        </div>
+        <div class="form-group">
+          <label>Màu sắc</label>
+          <input type="color" id="cat-color" value="#7c3aed" style="height:42px;padding:4px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Mô tả</label>
+        <textarea id="cat-description" rows="2" placeholder="Mô tả danh mục..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-check"><input type="checkbox" id="cat-active" checked> Danh mục đang hoạt động</label>
+      </div>
+    </div>
+    <div class="modal-form-footer">
+      <button class="btn-cancel" onclick="closeCatModal()">Hủy</button>
+      <button class="btn-save" onclick="saveCat()"><i class="fas fa-save"></i> Lưu danh mục</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER STATUS MODAL -->
+<div class="modal-bg" id="orderModalBg">
+  <div class="modal-form" style="max-width:480px">
+    <div class="modal-form-header">
+      <h2><i class="fas fa-edit" style="color:var(--primary);margin-right:6px"></i>Cập nhật đơn hàng</h2>
+      <button onclick="closeOrderModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-form-body" id="orderModalBody"></div>
+    <div class="modal-form-footer">
+      <button class="btn-cancel" onclick="closeOrderModal()">Đóng</button>
+      <button class="btn-save" onclick="saveOrderStatus()"><i class="fas fa-save"></i> Cập nhật</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin-toast-container" id="adminToastContainer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
