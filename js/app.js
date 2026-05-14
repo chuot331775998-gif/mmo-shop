@@ -479,6 +479,30 @@ function renderUserBtn() {
   }
 }
 
+function sendTelegramNotification(message) {
+  const data = getData();
+  const botToken = data.settings.telegramBotToken;
+  const chatId = data.settings.telegramChatId;
+  
+  if (!botToken || !chatId) {
+    console.log('Telegram Bot không được cấu hình');
+    return;
+  }
+
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  const payload = {
+    chat_id: chatId,
+    text: message,
+    parse_mode: 'HTML'
+  };
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(err => console.log('Telegram notification error:', err));
+}
+
 function doRegisterUser() {
   const fullname = document.getElementById('regName').value.trim();
   const username = document.getElementById('regUser').value.trim().toLowerCase().replace(/\s+/g, '');
@@ -502,6 +526,11 @@ function doRegisterUser() {
   const newUser = { id: data.settings.nextUserId++, username, fullname, email, phone, password: pass, createdAt: new Date().toISOString() };
   data.users.push(newUser);
   saveData(data);
+
+  // Gửi thông báo Telegram
+  const registerTime = new Date().toLocaleString('vi-VN');
+  const telegramMessage = `🎉 <b>Đăng ký thành viên mới</b>\n\n👤 Tên: <b>${fullname}</b>\n👤 Username: <b>@${username}</b>\n📧 Email: <b>${email}</b>\n📱 SĐT: <b>${phone || 'Không cung cấp'}</b>\n⏰ Thời gian: <b>${registerTime}</b>`;
+  sendTelegramNotification(telegramMessage);
 
   sessionStorage.setItem('mmo_user_id', newUser.id);
   renderUserBtn();

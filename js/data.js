@@ -14,6 +14,8 @@ const INITIAL_DATA = {
     contactTelegram: "t.me/mmoshopvn",
     adminUsername: "admin",
     adminPassword: "admin123",
+    telegramBotToken: "8966694050:AAGNYqeFjR3dl7Un5mmzlBtqmjLaMnt8do0",
+    telegramChatId: "7856340376",
     nextProductId: 270,
     nextOrderId: 11,
     nextCategoryId: 15,
