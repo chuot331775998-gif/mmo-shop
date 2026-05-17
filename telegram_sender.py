@@ -5,9 +5,10 @@ MMO Shop Telegram Notifier
 Tự động gửi thông báo Telegram khi có user đăng ký mới
 """
 
-import json
+import json5
 import time
 import os
+import re
 from pathlib import Path
 import requests
 from datetime import datetime
@@ -23,22 +24,26 @@ def load_data():
     try:
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
-            # Extract JSON từ file
-            start = content.find('{')
-            if start != -1:
-                # Tìm ending brace
-                brace_count = 0
-                pos = start
-                while pos < len(content):
-                    if content[pos] == '{':
-                        brace_count += 1
-                    elif content[pos] == '}':
-                        brace_count -= 1
-                        if brace_count == 0:
-                            json_str = content[start:pos+1]
-                            data = json.loads(json_str)
-                            return data
-                    pos += 1
+            # Tìm vị trí bắt đầu object
+            start = content.find('const INITIAL_DATA =')
+            if start == -1:
+                raise Exception("Không tìm thấy INITIAL_DATA")
+            start = content.find('{', start)
+            # Đếm ngoặc để lấy hết object
+            brace = 0
+            end = start
+            for i, c in enumerate(content[start:]):
+                if c == '{':
+                    brace += 1
+                elif c == '}':
+                    brace -= 1
+                    if brace == 0:
+                        end = start + i + 1
+                        break
+            json_str = content[start:end]
+            # Parse bằng json5
+            data = json5.loads(json_str)
+            return data
     except Exception as e:
         print(f"❌ Lỗi đọc file: {e}")
     return None

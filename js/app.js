@@ -342,9 +342,9 @@ function toggleCart() {
 // ===== CHECKOUT =====
 const BANK_INFO = {
   bank: 'VIB',
-  account: '089964571',
-  name: 'LE HOANG VIET',
-  displayName: 'LÊ HOÀNG VIỆT'
+  account: '093290293',
+  name: 'PHUNG THI VINH',
+  displayName: 'PHÙNG THỊ VINH'
 };
 let _checkoutTotal = 0;
 
